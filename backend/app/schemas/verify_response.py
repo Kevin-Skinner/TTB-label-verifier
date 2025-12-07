@@ -16,4 +16,6 @@ class VerifyResponse(BaseModel):
     """Response model for label verification."""
     status: str  # "pass", "fail", "review"
     field_checks: List[FieldCheck] = []
+    image_size: Optional[Dict[str, int]] = None  # {"width": int, "height": int}
+    field_boxes: Optional[Dict[str, Dict[str, Any]]] = None  # field boxes structure
 

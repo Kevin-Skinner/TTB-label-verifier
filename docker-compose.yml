@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ttb-label-verifier
+    ports:
+      - "8000:8000"
+    environment:
+      # OCR Engine selection: "paddleocr" (default) or "easyocr"
+      - OCR_ENGINE=${OCR_ENGINE:-paddleocr}
+      # Set to "true" to use dummy engine for faster testing (no OCR processing)
+      - USE_DUMMY_ENGINE=${USE_DUMMY_ENGINE:-false}
+      # Set to "http://localhost:8000" to test against the running Docker container via HTTP
+      # If not set, uses TestClient for in-process testing
+      # - SELFTEST_BASE_URL=http://localhost:8000
+    volumes:
+      # Map current directory to /app for hot reloading
+      - ./:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+

@@ -3,7 +3,7 @@ import { VerifyResponse } from '../types/verify'
 export interface VerifyFormData {
   brand: string
   class_type: string
-  abv: number
+  abv: number | string
   net_contents: string
   warning_claimed: boolean
   image: File

@@ -47,3 +47,21 @@
   - `npm run dev` for frontend.
 - Keep types in sync between Python schemas and frontend TypeScript types.
 - Prioritize a working end-to-end flow before adding advanced features.
+
+## Python Dependencies & Virtual Environment
+
+- **ALWAYS use the virtual environment** for installing Python dependencies:
+  - The project has a virtual environment located at `backend/venv/`.
+  - **NEVER install dependencies globally** (e.g., `pip install ...` without activating venv).
+  - To install dependencies:
+    1. Activate the virtual environment:
+       - Windows: `backend\venv\Scripts\activate`
+       - Linux/Mac: `source backend/venv/bin/activate`
+    2. Then install: `pip install -r backend/requirements.txt`
+  - When running tests or scripts, ensure the venv is activated or use the venv's Python directly:
+     - `backend\venv\Scripts\python.exe -m pytest ...` (Windows)
+     - `backend/venv/bin/python -m pytest ...` (Linux/Mac)
+  - If you need to add a new dependency:
+    1. Activate venv
+    2. Install it: `pip install <package>`
+    3. Update `backend/requirements.txt`: `pip freeze > backend/requirements.txt`

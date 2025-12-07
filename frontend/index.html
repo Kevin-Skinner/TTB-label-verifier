@@ -1,13 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TTB Label Verifier</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="app" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <header style="margin-bottom: 30px; color: #f5f5f5; display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="margin: 0;">TTB Label Verifier</h1>
+            <!-- <button
+                id="selftest-btn"
+                onclick="runSelftest()"
+                style="padding: 8px 16px; font-size: 14px; cursor: pointer; background-color: #455A64; color: #f5f5f5; border: 1px solid #546E7A; border-radius: 4px;"
+            >
+                Run Automated OCR Tests
+            </button> -->
+        </header>
+        <div id="selftest-result"></div>
+        <div id="selftest-spinner" class="htmx-indicator" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background-color: #455A64; border-radius: 4px; color: #f5f5f5;">
+                <div class="spinner"></div>
+                <span>Running tests...</span>
+            </div>
+        </div>
+        
+        <main style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background-color: #37474F; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <section class="form-section">
+                    <h2 style="color: #f5f5f5; margin-top: 0; margin-bottom: 20px;">Upload Label</h2>
+                    <form
+                        id="verify-form"
+                        hx-post="/api/verify"
+                        hx-swap="none"
+                        hx-encoding="multipart/form-data"
+                        hx-indicator="#processing-indicator"
+                        hx-on::after-request="handleVerifyResponse(event)"
+                    >
+                        <div style="margin-bottom: 14px;">
+                            <label for="brand" style="display: block; margin-bottom: 6px; color: #f5f5f5;">Brand:</label>
+                            <input
+                                id="brand"
+                                name="brand"
+                                type="text"
+                                required
+                                class="input-wide"
+                            />
+                        </div>
+                        
+                        <div style="margin-bottom: 14px;">
+                            <label for="class_type" style="display: block; margin-bottom: 6px; color: #f5f5f5;">Class/Type:</label>
+                            <select
+                                id="class_type"
+                                name="class_type"
+                                required
+                                class="input-wide"
+                            >
+                                <option value="Distilled Spirits">Distilled Spirits</option>
+                                <option value="Wine">Wine</option>
+                                <option value="Malt Beverages">Malt Beverages</option>
+                                <option value="N/A">N/A</option>
+                            </select>
+                        </div>
+                        
+                        <div style="margin-bottom: 14px;">
+                            <label for="abv" style="display: block; margin-bottom: 6px; color: #f5f5f5;">ABV:</label>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <input
+                                    id="abv"
+                                    type="number"
+                                    step="0.1"
+                                    class="input-wide"
+                                    style="margin-bottom: 0;"
+                                />
+                                <input type="hidden" name="abv" id="abv_hidden" value="">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                    <input type="radio" name="abv_mode" value="%" checked onchange="updateAbvMode()">
+                                    %
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                    <input type="radio" name="abv_mode" value="decimal" onchange="updateAbvMode()">
+                                    Decimal
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                    <input type="radio" name="abv_mode" value="na" id="abv_na_radio" onchange="updateAbvMode()">
+                                    N/A
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 14px;">
+                            <label for="net_contents" style="display: block; margin-bottom: 6px; color: #f5f5f5;">Net Contents:</label>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <input
+                                    id="net_contents"
+                                    name="net_contents"
+                                    type="text"
+                                    placeholder="e.g., 750"
+                                    class="input-wide"
+                                    style="margin-bottom: 0;"
+                                    oninput="validateNetContents(this)"
+                                />
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                    <input type="radio" name="volume_unit" value="ml" checked onchange="updateNetContentsMode()">
+                                    mL
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                    <input type="radio" name="volume_unit" value="oz" onchange="updateNetContentsMode()">
+                                    oz
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                    <input type="radio" name="volume_unit" value="na" id="net_contents_na_radio" onchange="updateNetContentsMode()">
+                                    N/A
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 14px;">
+                            <label for="warning" style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #f5f5f5;">
+                                <input
+                                    id="warning"
+                                    type="checkbox"
+                                    value="true"
+                                    onchange="updateWarningValue(this)"
+                                />
+                                Warning Present
+                            </label>
+                            <input type="hidden" name="warning_claimed" id="warning_hidden" value="false">
+                        </div>
+                        
+                        <div style="margin-bottom: 14px;">
+                            <label for="image" style="display: block; margin-bottom: 6px; color: #f5f5f5;">Image:</label>
+                            <input
+                                id="image"
+                                name="image"
+                                type="file"
+                                accept="image/*"
+                                required
+                                onchange="handleFileChange(event)"
+                                style="margin-bottom: 8px;"
+                            />
+                            <p id="file-name" style="color: #f5f5f5; margin-top: 8px; margin-bottom: 0; display: none;"></p>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                            <button
+                                type="submit"
+                                id="submit-btn"
+                                style="padding: 10px 20px; font-size: 16px; cursor: pointer;"
+                            >
+                                Verify Label
+                            </button>
+                            
+                            <div id="processing-indicator" class="htmx-indicator">
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background-color: #455A64; border-radius: 4px; color: #f5f5f5;">
+                                    <div class="spinner"></div>
+                                    <span>Processing image and verifying label...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+            </div>
+            
+            <div id="results-panel" style="background-color: #37474F; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                <section class="results-panel">
+                    <h2 style="color: #f5f5f5; margin-top: 0; margin-bottom: 20px;">Verification Results</h2>
+                    <div class="results-content">
+                        <p style="color: #f5f5f5;">Submit a label to see verification results.</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+        
+        <div id="label-viewer-container" style="display: none; margin-top: 20px;">
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+                <div style="flex: 1 1 600px; max-width: 600px; background-color: #37474F; padding: 16px; border-radius: 8px;">
+                    <h2 style="color: #f5f5f5; margin-top: 0; margin-bottom: 20px;">Label Viewer</h2>
+                    <div id="label-viewer" style="position: relative; display: inline-block;">
+                        <canvas id="label-canvas" style="max-width: 100%; height: auto; border: 1px solid #546E7A;"></canvas>
+                        <svg id="label-overlay" style="position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%;"></svg>
+                    </div>
+                    <div id="field-adjust" style="display: none; margin-top: 20px; padding: 16px; background-color: #455A64; border-radius: 4px;">
+                        <h3 style="color: #f5f5f5; margin-top: 0;">Adjust Field</h3>
+                        <p style="color: #f5f5f5;">Click and drag the box to adjust the region, then click "Re-OCR" to extract text from the selected area.</p>
+                        <button id="reocr-btn" style="padding: 8px 16px; margin-top: 10px; cursor: pointer;">Re-OCR Selected Region</button>
+                    </div>
+                </div>
+                
+                <!-- Color Legend -->
+                <div id="color-legend" style="min-width: 200px; flex: 0 0 200px; background-color: #37474F; padding: 16px; border-radius: 4px; height: fit-content;">
+                    <h4 style="color: #f5f5f5; margin-top: 0; margin-bottom: 12px; font-size: 16px;">Legend</h4>
+                    <div id="legend-items" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div data-field="brand" style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <div style="width: 20px; height: 20px; background-color: rgba(255, 152, 0, 0.25); border: 2px solid #ff9800; border-radius: 2px; flex-shrink: 0;"></div>
+                            <span style="color: #f5f5f5; font-size: 14px;">Brand</span>
+                        </div>
+                        <div data-field="class_type" style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <div style="width: 20px; height: 20px; background-color: rgba(156, 39, 176, 0.25); border: 2px solid #9c27b0; border-radius: 2px; flex-shrink: 0;"></div>
+                            <span style="color: #f5f5f5; font-size: 14px;">Class/Type</span>
+                        </div>
+                        <div data-field="abv" style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <div style="width: 20px; height: 20px; background-color: rgba(76, 175, 80, 0.25); border: 2px solid #4caf50; border-radius: 2px; flex-shrink: 0;"></div>
+                            <span style="color: #f5f5f5; font-size: 14px;">ABV</span>
+                        </div>
+                        <div data-field="net_contents" style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <div style="width: 20px; height: 20px; background-color: rgba(33, 150, 243, 0.25); border: 2px solid #2196f3; border-radius: 2px; flex-shrink: 0;"></div>
+                            <span style="color: #f5f5f5; font-size: 14px;">Net Contents</span>
+                        </div>
+                        <div data-field="warning" style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                            <div style="width: 20px; height: 20px; background-color: rgba(244, 67, 54, 0.25); border: 2px solid #f44336; border-radius: 2px; flex-shrink: 0;"></div>
+                            <span style="color: #f5f5f5; font-size: 14px;">Warning</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
 </html>
-
