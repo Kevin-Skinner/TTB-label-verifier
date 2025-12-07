@@ -26,9 +26,6 @@ COPY backend/ /app/backend/
 COPY frontend/static/ /app/frontend/static/
 COPY frontend/index.html /app/frontend/index.html
 
-# Copy test files for automated testing
-COPY backend/tests/ /app/backend/tests/
-
 # Install Python dependencies
 WORKDIR /app/backend
 RUN pip install --no-cache-dir -r requirements.txt
