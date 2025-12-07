@@ -1,223 +1,152 @@
 # TTB Label Verifier
 
-A web application for verifying TTB (Alcohol and Tobacco Tax and Trade Bureau) labels against regulations.
+A web application for verifying TTB (Alcohol and Tobacco Tax and Trade Bureau) alcohol beverage labels against regulatory requirements using OCR (Optical Character Recognition) technology.
 
-## Project Structure
+## Live Application
 
-- `backend/` - FastAPI backend application
-- `frontend/` - HTMX frontend application
-- `docs/` - Project documentation
+**Web-Deployed Version**: [https://ttb-label-verifier-production.up.railway.app/](https://ttb-label-verifier-production.up.railway.app/)
 
-## Quick Start
+*Hosted on Railway*
 
-### Docker (Recommended)
+## What It Does
 
-The easiest way to run the application is using Docker:
+The TTB Label Verifier automatically extracts and verifies key information from alcohol beverage label images:
+
+- **Brand Name**: Detects and verifies the product brand
+- **Class/Type**: Identifies product category (Distilled Spirits, Wine, or Malt Beverages)
+- **ABV (Alcohol By Volume)**: Extracts and validates alcohol percentage
+- **Net Contents**: Detects volume/quantity information
+- **Government Warning**: Verifies presence of required warning text
+
+The application uses **PaddleOCR** for text extraction and applies specialized algorithms to identify and verify each field. It's designed to handle noisy, real-world images rather than requiring high-quality scans.
+
+For detailed information on how fields are extracted, see [EXTRACTION_LOGIC_SUMMARY.md](./EXTRACTION_LOGIC_SUMMARY.md).
+
+## How to Use
+
+1. **Upload a label image** (JPG, PNG, or other image format)
+2. **Enter the expected information** in the form:
+   - Brand name
+   - Class/Type (dropdown selection)
+   - ABV (percentage or decimal, or N/A)
+   - Net Contents (with unit selection, or N/A)
+   - Warning Present (checkbox)
+3. **Click "Verify Label"** to process the image
+4. **Review the results** showing:
+   - Verification status for each field (PASS/FAIL/REVIEW)
+   - Detected values from OCR
+   - Visual overlay showing where information was extracted
+   - Overall verification status
+
+### Verification Status
+
+- **PASS**: Field matches between form and OCR detection
+- **FAIL**: Field mismatch or missing required information (e.g., warning)
+- **REVIEW**: Requires manual verification (low OCR confidence, not detected, or user claimed N/A but value detected)
+
+**Important**: Government warning is mandatory. If warning is not present (unchecked in form or not detected by OCR), overall status will be **FAIL** regardless of other field matches.
+
+## Running Locally
+
+### Prerequisites
+
+- Docker and Docker Compose (recommended), OR
+- Python 3.10+ and pip
+
+### Option 1: Docker (Recommended)
 
 ```bash
-# Using docker-compose (recommended)
+# Clone the repository
+git clone <repository-url>
+cd TTB-label-verifier
+
+# Start the application
 docker-compose up --build
-
-# Or using the test script
-# Linux/Mac:
-./test-docker.sh
-
-# Windows PowerShell:
-.\test-docker.ps1
-
-# Windows CMD:
-test-docker.bat
 ```
 
 The application will be available at `http://localhost:8000`
 
-### Local Development
-
-#### Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-#### Frontend
-
-The frontend is now served directly by the FastAPI backend. No separate frontend server is needed.
-
-## Docker Testing
-
-### Quick Start with Docker Compose
-
-The simplest way to test the Docker build:
-
-```bash
-docker-compose up --build
-```
-
-This will:
-- Build the Docker image
-- Start the container on port 8000
-- Make the application available at `http://localhost:8000`
-
-To run in detached mode (background):
-```bash
-docker-compose up -d --build
-```
-
-To stop:
+**Stop the application:**
 ```bash
 docker-compose down
 ```
 
-### Using Helper Scripts
-
-We provide platform-specific scripts for testing:
-
-**Linux/Mac:**
-```bash
-chmod +x test-docker.sh
-./test-docker.sh
-```
-
-**Windows PowerShell:**
-```powershell
-.\test-docker.ps1
-```
-
-**Windows CMD:**
-```cmd
-test-docker.bat
-```
-
-These scripts will:
-- Build the Docker image
-- Run the container
-- Wait for the health check
-- Display the access URL
-- Handle cleanup on exit (Ctrl+C)
-
-### Using Makefile
-
-If you have `make` installed, you can use these commands:
+### Option 2: Local Development
 
 ```bash
-make docker-build    # Build the image
-make docker-run      # Run with docker-compose
-make docker-test     # Build and test
-make docker-clean    # Stop and remove containers
-make docker-logs     # View container logs
-make docker-stop     # Stop running container
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --reload
 ```
 
-### Manual Docker Commands
+The application will be available at `http://localhost:8000`
 
-If you prefer to run Docker commands manually:
-
-```bash
-# Build the image
-docker build -t ttb-label-verifier:local .
-
-# Run the container
-docker run -d -p 8000:8000 --name ttb-test ttb-label-verifier:local
-
-# View logs
-docker logs -f ttb-test
-
-# Stop and remove
-docker stop ttb-test && docker rm ttb-test
-```
+**Note**: The frontend is served directly by the FastAPI backend. No separate frontend server is needed.
 
 ### Environment Variables
 
-You can configure the application using environment variables:
+Optional configuration via environment variables:
 
 - `OCR_ENGINE`: Set to `"paddleocr"` (default) or `"easyocr"`
-- `USE_DUMMY_ENGINE`: Set to `"true"` to use a dummy engine for faster testing
-- `SELFTEST_BASE_URL`: Set to `"http://localhost:8000"` to run automated tests against the running Docker container via HTTP. If not set, uses TestClient for in-process testing.
+- `USE_DUMMY_ENGINE`: Set to `"true"` for faster testing without OCR processing
 
-Create a `.env` file (see `.env.example`) or set them when running:
-
+Example:
 ```bash
-# Using docker-compose with custom environment
 OCR_ENGINE=easyocr docker-compose up
-
-# Using docker run
-docker run -d -p 8000:8000 -e OCR_ENGINE=easyocr ttb-label-verifier:local
-
-# To test against running Docker container
-docker run -d -p 8000:8000 -e SELFTEST_BASE_URL=http://localhost:8000 ttb-label-verifier:local
 ```
 
-### Running Automated Tests
+## Extraction Logic
 
-The application includes automated OCR tests that can be run in two modes:
+The application uses sophisticated algorithms to extract information from label images:
 
-**1. In-process testing (default):**
-- Uses FastAPI's TestClient for fast, in-process testing
-- No environment variable needed
-- Access via the "Run Automated OCR Tests" button in the UI or `/api/selftest/ocr` endpoint
+- **Brand Detection**: Multi-phase approach using fuzzy matching, spatial scoring, and horizontal/stacked expansion
+- **Class/Type Detection**: Hierarchical keyword scoring system (primary identifiers + contextual indicators)
+- **ABV Detection**: Three-tier strategy (same-line match → spatial proximity → regex fallback)
+- **Net Contents Detection**: Pattern matching with largest volume selection
+- **Warning Detection**: Phrase matching across OCR results
 
-**2. HTTP testing against Docker container:**
-- Tests the actual running Docker container via HTTP requests
-- Set `SELFTEST_BASE_URL=http://localhost:8000` in `docker-compose.yml` or as an environment variable
-- Useful for testing the deployed application end-to-end
-- Ensures the full stack (including network, file I/O, etc.) is tested
+The system includes a **confidence gate** that returns "REVIEW" status when OCR confidence is too low (< 0.60), ensuring quality control.
 
-To enable HTTP testing mode, uncomment the `SELFTEST_BASE_URL` line in `docker-compose.yml`:
+For complete details on extraction algorithms and verification logic, see [EXTRACTION_LOGIC_SUMMARY.md](./EXTRACTION_LOGIC_SUMMARY.md).
 
-```yaml
-environment:
-  - SELFTEST_BASE_URL=http://localhost:8000
+## Design Decisions
+
+Key technology choices and architectural decisions:
+
+- **OCR Engine**: PaddleOCR selected for superior accuracy and robustness
+- **Frontend**: HTMX (instead of React) for enhanced security
+- **Backend**: FastAPI for high-performance async operations
+- **Modularity**: Built with engine swapping in mind for future model evaluation
+
+For detailed rationale and technical architecture, see [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md).
+
+## Project Structure
+
+```
+TTB-label-verifier/
+├── backend/          # FastAPI backend application
+│   ├── app/
+│   │   ├── api/      # API routes
+│   │   └── services/ # OCR and verification logic
+│   └── requirements.txt
+├── frontend/         # HTMX frontend
+│   ├── index.html    # Main HTML
+│   └── static/       # CSS and JavaScript
+├── docker-compose.yml
+└── Dockerfile
 ```
 
-The test files (`backend/tests/form_submissions.csv` and `backend/tests/images/`) are automatically copied into the Docker container during build.
+## Documentation
 
-### Troubleshooting
-
-**Port 8000 already in use:**
-- Change the port mapping in `docker-compose.yml`: `"8001:8000"`
-- Or use: `docker run -p 8001:8000 ...`
-
-**Build takes a long time:**
-- This is normal on first build. PaddleOCR downloads large model files (~500MB)
-- Subsequent builds will be faster due to Docker layer caching
-
-**Container exits immediately:**
-- Check logs: `docker logs ttb-test` or `docker-compose logs`
-- Verify all required files are present (frontend/static/, backend/, etc.)
-
-**Static files not loading:**
-- Ensure `frontend/static/app.js` and `frontend/static/styles.css` exist
-- Check that `frontend/index.html` exists
-
-**Health check fails:**
-- Wait a bit longer - the application may need time to start
-- Check container logs for errors
-- Verify PaddleOCR dependencies installed correctly
-
-## Verification Rules
-
-### Mandatory Fields
-
-The following fields are mandatory for label verification:
-- **Brand**: Product brand name
-- **Class/Type**: One of "Distilled Spirits", "Wine", "Malt Beverages", or "N/A"
-- **ABV**: Alcohol by volume percentage (or "n/a" if not applicable)
-- **Net Contents**: Volume with unit (e.g., "750 ml") or "n/a" if not applicable
-- **Warning**: Government warning must be present on the label
-
-### Warning Requirement
-
-**Important**: Labels must have a government warning present. If the warning is not present (either unchecked in the form or not detected by OCR), the overall verification status will be **FAIL** with the note "Labels must have warning", even if all other fields match correctly.
-
-### Status Determination
-
-- **PASS**: All mandatory fields pass verification
-- **FAIL**: Any mandatory field fails OR warning is missing
-- **REVIEW**: Some fields require manual review (e.g., OCR confidence too low, field not detected)
+- [EXTRACTION_LOGIC_SUMMARY.md](./EXTRACTION_LOGIC_SUMMARY.md) - Detailed field extraction algorithms
+- [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md) - Technology choices and architecture
+- [ocr_logic.md](./ocr_logic.md) - Complete OCR logic documentation
 
 ## License
 
 MIT
-

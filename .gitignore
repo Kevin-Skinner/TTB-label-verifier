@@ -7,6 +7,8 @@ __pycache__/
 env/
 venv/
 .venv/
+**/venv/
+**/.venv/
 ENV/
 build/
 develop-eggs/
@@ -48,4 +50,21 @@ dist-ssr/
 # OS
 .DS_Store
 Thumbs.db
+
+# Project-specific
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Test and development files (optional - uncomment if you want to ignore tests)
+# backend/tests/
 
