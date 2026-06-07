@@ -68,3 +68,8 @@ Thumbs.db
 # Test and development files (optional - uncomment if you want to ignore tests)
 # backend/tests/
 
+# Resume/Portfolio documentation (not for version control)
+*_Experience_Summary.md
+
+resources/
+
