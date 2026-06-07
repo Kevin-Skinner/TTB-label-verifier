@@ -88,7 +88,7 @@ USE_DUMMY_ENGINE=false  # For testing without OCR processing
 **Rationale**: React was avoided due to security concerns:
 - **Security Risk**: Recent vulnerability exploits in React architecture allow attackers to remotely execute code on server hardware
 - **Mitigation Strategy**: HTMX provides a more secure alternative for dynamic web interactions
-- **Deployment Context**: While currently hosted via third-party (Railway), this design mitigates security risks should on-site hosting be pursued in the future
+- **Deployment Context**: This design mitigates security risks for both third-party cloud hosting and on-site deployments
 
 **HTMX Implementation**:
 - Loaded from CDN: `https://unpkg.com/htmx.org@1.9.10`
@@ -113,8 +113,7 @@ USE_DUMMY_ENGINE=false  # For testing without OCR processing
 - Easy integration with OCR libraries (PaddleOCR, EasyOCR)
 
 **Deployment**:
-- Currently hosted on Railway (third-party cloud platform)
-- Designed to support on-site hosting if needed
+- Designed to support both third-party cloud hosting and on-site deployment
 - Docker containerization for consistent deployment
 
 ### Security Considerations
@@ -235,8 +234,7 @@ return PaddleOCREngine()  # Default
 - Environment variable configuration
 
 **Deployment**:
-- Docker Compose for local development
-- Railway for cloud hosting
+- Docker Compose for local development and self-hosting
 - Health checks configured
 - Port 8000 exposed
 

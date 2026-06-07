@@ -2,11 +2,7 @@
 
 A web application for verifying TTB (Alcohol and Tobacco Tax and Trade Bureau) alcohol beverage labels against regulatory requirements using OCR (Optical Character Recognition) technology.
 
-## Live Application
-
-**Web-Deployed Version**: [https://ttb-label-verifier-production.up.railway.app/](https://ttb-label-verifier-production.up.railway.app/)
-
-*Hosted on Railway*
+> **Note:** the hosted demo has been retired. This repository is preserved as a portfolio/reference implementation — clone and run locally per the instructions below.
 
 ## What It Does
 
@@ -46,7 +42,7 @@ For detailed information on how fields are extracted, see [EXTRACTION_LOGIC_SUMM
 
 **Important**: Government warning is mandatory. If warning is not present (unchecked in form or not detected by OCR), overall status will be **FAIL** regardless of other field matches.
 
-## Running Locally
+## Getting Started
 
 ### Prerequisites
 
